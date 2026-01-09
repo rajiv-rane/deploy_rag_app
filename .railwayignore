@@ -1,0 +1,9 @@
+# Files to ignore in Railway builds
+DEPLOYMENT_GUIDE.md
+DEPLOYMENT_SUMMARY.md
+QUICK_DEPLOY.md
+STEP_BY_STEP_DEPLOY.md
+.cursorignore
+.gitignore
+README.md
+vector_db/

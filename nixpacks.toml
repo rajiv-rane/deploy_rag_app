@@ -1,0 +1,13 @@
+# Nixpacks configuration for Railway
+# This tells Railway to use the ingestion-phase directory
+[phases.setup]
+nixPkgs = ["python310"]
+
+[phases.install]
+cmds = [
+    "cd ingestion-phase",
+    "pip install -r requirements.txt"
+]
+
+[start]
+cmd = "cd ingestion-phase && /app/start_services.sh"
