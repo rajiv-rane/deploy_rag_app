@@ -11,15 +11,18 @@ RUN apt-get update && apt-get install -y \
 COPY ingestion-phase/requirements-prod.txt /tmp/requirements.txt
 
 # Install Python dependencies
-# First install regular packages from PyPI
-RUN pip install --no-cache-dir --user -r /tmp/requirements.txt
+# First install regular packages from PyPI (system-wide for reliability)
+RUN pip install --no-cache-dir -r /tmp/requirements.txt
 
 # Then install CPU-only PyTorch (much smaller than GPU version)
 # This reduces torch from ~2GB to ~200MB
-RUN pip install --no-cache-dir --user --index-url https://download.pytorch.org/whl/cpu torch>=2.0.0
+RUN pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu torch>=2.0.0
 
 # Install transformers and huggingface (after torch)
-RUN pip install --no-cache-dir --user transformers>=4.30.0 huggingface-hub>=0.16.0
+RUN pip install --no-cache-dir transformers>=4.30.0 huggingface-hub>=0.16.0
+
+# Verify transformers installation
+RUN python -c "import transformers; print(f'Transformers version: {transformers.__version__}')" || echo "ERROR: Transformers not installed!"
 
 # Clean up pip cache
 RUN pip cache purge
@@ -36,11 +39,10 @@ RUN apt-get update && apt-get install -y \
 # Set working directory
 WORKDIR /app
 
-# Copy Python packages from builder
-COPY --from=builder /root/.local /root/.local
-
-# Make sure scripts in .local are usable
-ENV PATH=/root/.local/bin:$PATH
+# Copy Python packages from builder (system-wide installation)
+# Copy site-packages from builder
+COPY --from=builder /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy only necessary application files (excludes large files via .dockerignore)
 COPY ingestion-phase/api.py ingestion-phase/app.py ingestion-phase/config.py ./
