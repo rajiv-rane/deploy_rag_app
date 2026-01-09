@@ -256,9 +256,11 @@ class FastAPIClient:
     def health_check(self) -> bool:
         """Check if FastAPI backend is available"""
         try:
-            response = self.client.get(f"{self.base_url}/health", timeout=5.0)
+            # Use a longer timeout for first check (model loading can be slow)
+            response = self.client.get(f"{self.base_url}/health", timeout=10.0)
             return response.status_code == 200
-        except:
+        except Exception as e:
+            # Log the error for debugging but don't fail
             return False
     
     def close(self):
