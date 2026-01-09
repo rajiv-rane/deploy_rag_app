@@ -7,11 +7,13 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy only requirements first for better caching
-COPY ingestion-phase/requirements.txt /tmp/requirements.txt
+# Copy production-optimized requirements (smaller image)
+COPY ingestion-phase/requirements-prod.txt /tmp/requirements.txt
 
 # Install Python dependencies
-RUN pip install --no-cache-dir --user -r /tmp/requirements.txt
+# Use CPU-only PyTorch to reduce size significantly
+RUN pip install --no-cache-dir --user -r /tmp/requirements.txt && \
+    pip cache purge
 
 # Final stage - minimal runtime image
 FROM python:3.10-slim
@@ -41,7 +43,10 @@ COPY ingestion-phase/start_services.sh ./start_services.sh
 COPY ingestion-phase/scripts/ ./scripts/
 
 # Create necessary directories (will be populated at runtime)
-RUN mkdir -p vector_db/chroma embeddings processed data logs temp .cache/transformers .cache/huggingface
+# Vector DB and embeddings are generated at runtime, NOT included in image
+RUN mkdir -p vector_db/chroma embeddings processed data logs temp .cache/transformers .cache/huggingface && \
+    # Clean up any accidentally copied large files
+    rm -rf vector_db/* embeddings/* processed/* data/* 2>/dev/null || true
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1

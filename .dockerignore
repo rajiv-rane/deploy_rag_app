@@ -1,10 +1,31 @@
 # Exclude large files and directories
+# Vector DB and embeddings - generated at runtime, NOT in image
 ingestion-phase/embeddings/
 ingestion-phase/vector_db/
+**/vector_db/
+**/embeddings/
+vector_db/
+embeddings/
+*.pt
+*.bin
+*.pkl
+*.pickle
+*.sqlite
+*.sqlite3
+*.db
+*.safetensors
+*.h5
+*.ckpt
+
+# Data files - not needed in production
 ingestion-phase/data/
 ingestion-phase/processed/
 ingestion-phase/logs/
 ingestion-phase/temp/
+**/data/
+**/processed/
+**/logs/
+**/temp/
 ingestion-phase/__pycache__/
 ingestion-phase/*.pyc
 ingestion-phase/*.pyo
