@@ -36,8 +36,8 @@ COPY ingestion-phase/api.py ingestion-phase/app.py ingestion-phase/config.py ./
 COPY ingestion-phase/start_services.sh ./
 COPY ingestion-phase/run_app.py ingestion-phase/setup.py ./
 
-# Copy only necessary subdirectories (scripts without notebooks)
-COPY ingestion-phase/scripts/prepare_training_data.py ./scripts/
+# Copy scripts directory (excluding notebooks via .dockerignore)
+COPY ingestion-phase/scripts/ ./scripts/
 
 # Create necessary directories (will be populated at runtime)
 RUN mkdir -p vector_db/chroma embeddings processed data logs temp .cache/transformers .cache/huggingface
