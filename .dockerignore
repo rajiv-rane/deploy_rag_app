@@ -32,12 +32,13 @@ ingestion-phase/test_*.py
 ingestion-phase/demo.py
 
 # Exclude batch/shell scripts (not needed in Docker)
+# BUT keep start_services.sh which is required
 ingestion-phase/*.bat
-ingestion-phase/*.sh
 ingestion-phase/start_api.bat
 ingestion-phase/start_api.sh
 ingestion-phase/start.bat
 ingestion-phase/start.sh
+# Don't exclude start_services.sh - it's needed!
 
 # Exclude deployment configs from ingestion-phase (we use root ones)
 ingestion-phase/Dockerfile

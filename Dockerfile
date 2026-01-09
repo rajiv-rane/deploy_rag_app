@@ -33,8 +33,9 @@ ENV PATH=/root/.local/bin:$PATH
 
 # Copy only necessary application files (excludes large files via .dockerignore)
 COPY ingestion-phase/api.py ingestion-phase/app.py ingestion-phase/config.py ./
-COPY ingestion-phase/start_services.sh ./
 COPY ingestion-phase/run_app.py ingestion-phase/setup.py ./
+# Copy start_services.sh explicitly (must not be in .dockerignore)
+COPY ingestion-phase/start_services.sh ./start_services.sh
 
 # Copy scripts directory (excluding notebooks via .dockerignore)
 COPY ingestion-phase/scripts/ ./scripts/
