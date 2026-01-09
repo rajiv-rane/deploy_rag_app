@@ -54,11 +54,12 @@ cleanup() {
 # Set up signal handlers
 trap cleanup SIGTERM SIGINT EXIT
 
-# Start FastAPI in background (don't fail if it doesn't start immediately)
-echo "⏳ Starting FastAPI backend..."
+# Start FastAPI in background (non-blocking - don't wait for it)
+echo "⏳ Starting FastAPI backend in background..."
 cd /app
 
 # Start FastAPI - allow it to fail without stopping the script
+# Don't wait for it - Streamlit needs to start immediately for Railway
 python -m uvicorn api:app \
     --host 0.0.0.0 \
     --port $FASTAPI_PORT \
@@ -69,63 +70,21 @@ python -m uvicorn api:app \
     --timeout-graceful-shutdown 30 > /tmp/fastapi.log 2>&1 &
 FASTAPI_PID=$!
 
-echo "⏳ FastAPI starting (PID: $FASTAPI_PID)..."
-echo "   Check /tmp/fastapi.log for FastAPI output"
+echo "⏳ FastAPI starting in background (PID: $FASTAPI_PID)..."
+echo "   (Will be available once model loading completes - check /tmp/fastapi.log)"
+echo "   Streamlit will start immediately (can work in fallback mode)"
 
-# Wait for FastAPI to start (with retries)
-# Model loading can take 2-3 minutes on first run, so wait longer
-echo "⏳ Waiting for FastAPI to initialize..."
-echo "   (Model loading may take 2-3 minutes on first run)"
-MAX_WAIT=180  # Increased to 3 minutes for model download
-WAIT_COUNT=0
-FASTAPI_READY=0
-
-while [ $WAIT_COUNT -lt $MAX_WAIT ]; do
-    # Check if FastAPI process is still running
-    if ! kill -0 $FASTAPI_PID 2>/dev/null; then
-        echo "❌ FastAPI process died! Check logs below:"
-        cat /tmp/fastapi.log 2>/dev/null || echo "   (No logs available)"
-        break
-    fi
-    
-    # Check if FastAPI is responding (use root endpoint - simpler and faster)
-    if curl -f -s http://localhost:$FASTAPI_PORT/ > /dev/null 2>&1; then
-        echo "✅ FastAPI is ready!"
-        FASTAPI_READY=1
-        break
-    fi
-    sleep 5
-    WAIT_COUNT=$((WAIT_COUNT + 5))
-    echo "   Still waiting... ($WAIT_COUNT/$MAX_WAIT seconds)"
-    
-    # Show recent logs every 30 seconds
-    if [ $((WAIT_COUNT % 30)) -eq 0 ] && [ $WAIT_COUNT -gt 0 ]; then
-        echo "   Recent FastAPI logs:"
-        tail -5 /tmp/fastapi.log 2>/dev/null | sed 's/^/      /' || echo "      (No logs yet)"
-    fi
-done
-
-if [ $FASTAPI_READY -eq 0 ]; then
-    echo "⚠️  FastAPI did not start within $MAX_WAIT seconds"
-    echo "   Streamlit will start anyway (fallback mode)"
-    echo "   Full FastAPI logs:"
-    cat /tmp/fastapi.log 2>/dev/null | tail -30 | sed 's/^/   /' || echo "   (No logs available)"
-fi
-
-# Start Streamlit in foreground (this will be the main process)
+# Start Streamlit immediately (this will be the main process)
+# Railway needs a responding service quickly - don't wait for FastAPI
 echo ""
 echo "⏳ Starting Streamlit frontend..."
 echo "============================================================"
-if [ $FASTAPI_READY -eq 1 ]; then
-    echo "✅ FastAPI is running on port $FASTAPI_PORT"
-else
-    echo "⚠️  FastAPI not ready - Streamlit will use fallback mode"
-fi
 echo "📍 Starting Streamlit on port $EXTERNAL_PORT"
+echo "   FastAPI is starting in background (will be available once ready)"
+echo "   Streamlit will work in fallback mode until FastAPI is ready"
 echo "============================================================"
 echo ""
-echo "⏳ Application is loading..."
-echo "   (This may take 1-2 minutes for model loading on first start)"
+echo "🚀 Streamlit starting now..."
 echo ""
 
 # Set Streamlit environment variables
