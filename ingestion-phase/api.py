@@ -839,6 +839,13 @@ async def embed_text_endpoint(request: Dict[str, str]):
     if not text:
         raise HTTPException(status_code=400, detail="Text cannot be empty")
     
+    # Check if model is available
+    if not TRANSFORMERS_AVAILABLE or tokenizer is None or model is None:
+        raise HTTPException(
+            status_code=503,
+            detail="Embedding model is still loading. Please wait 1-2 minutes and try again. The model takes 2-3 minutes to load on first startup."
+        )
+    
     try:
         embedding = await embed_text_async(text)
         return {"embedding": embedding}
