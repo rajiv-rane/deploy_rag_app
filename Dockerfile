@@ -66,8 +66,9 @@ RUN mkdir -p vector_db/chroma embeddings processed data logs temp .cache/transfo
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
-ENV TRANSFORMERS_CACHE=/app/.cache/transformers
+# Use HF_HOME instead of TRANSFORMERS_CACHE (deprecated in transformers v5)
 ENV HF_HOME=/app/.cache/huggingface
+ENV TRANSFORMERS_CACHE=/app/.cache/transformers
 ENV PYTHONPATH=/app:/usr/local/lib/python3.10/site-packages
 
 # Expose ports

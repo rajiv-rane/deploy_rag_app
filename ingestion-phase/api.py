@@ -95,8 +95,9 @@ async def lifespan(app: FastAPI):
             print("Loading Bio ClinicalBERT model...")
             print("   (This may take 1-2 minutes on first run - downloading ~400MB model)")
             # Set cache directory to avoid permission issues
-            os.environ["TRANSFORMERS_CACHE"] = os.getenv("TRANSFORMERS_CACHE", "/app/.cache/transformers")
+            # Use HF_HOME (new) instead of TRANSFORMERS_CACHE (deprecated)
             os.environ["HF_HOME"] = os.getenv("HF_HOME", "/app/.cache/huggingface")
+            os.environ["TRANSFORMERS_CACHE"] = os.getenv("TRANSFORMERS_CACHE", "/app/.cache/transformers")  # For backward compatibility
             tokenizer = AutoTokenizer.from_pretrained("emilyalsentzer/Bio_ClinicalBERT", cache_dir="/app/.cache/transformers")
             model = AutoModel.from_pretrained("emilyalsentzer/Bio_ClinicalBERT", cache_dir="/app/.cache/transformers")
             model.eval()
