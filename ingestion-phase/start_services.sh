@@ -14,6 +14,14 @@ else
     echo "✅ GROQ_API_KEY is set"
 fi
 
+# Verify critical Python packages are installed
+echo "🔍 Verifying Python packages..."
+python -c "import transformers; print(f'✅ Transformers {transformers.__version__} installed')" 2>/dev/null || echo "❌ ERROR: Transformers not found!"
+python -c "import torch; print(f'✅ PyTorch {torch.__version__} installed')" 2>/dev/null || echo "❌ ERROR: PyTorch not found!"
+python -c "import streamlit; print(f'✅ Streamlit {streamlit.__version__} installed')" 2>/dev/null || echo "❌ ERROR: Streamlit not found!"
+python -c "import fastapi; print(f'✅ FastAPI {fastapi.__version__} installed')" 2>/dev/null || echo "❌ ERROR: FastAPI not found!"
+echo ""
+
 # Get port from environment variable (Railway/Render sets this)
 # Use PORT for Streamlit (main service), FastAPI on internal port
 EXTERNAL_PORT=${PORT:-8501}
