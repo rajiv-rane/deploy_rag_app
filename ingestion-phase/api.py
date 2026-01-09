@@ -621,10 +621,37 @@ async def generate_summary_async(patient_data: str) -> str:
 Base your summary entirely on the INPUT PATIENT DATA provided.
 The discharge summary MUST include: Name, Unit No, Date Of Birth, Sex, Admission/Discharge Dates, Attending, Chief Complaint, Procedure, History, Physical Exam (on Admission), Pertinent Results, Brief Hospital Course, Medications on Admission, Discharge Medications, Discharge Instructions, Discharge Disposition, Discharge Diagnosis, Discharge Condition, Follow-up.
 
-For Name, Unit No, Date of Birth, and Sex, copy the information verbatim.
-If information is missing, state "[Information not available]".
-Use concise, professional medical language. Be brief and factual.
-IMPORTANT: Do NOT use markdown formatting (no asterisks, no bold, no headers). Return plain text only."""
+FORMATTING REQUIREMENTS:
+- Use clear section headings on separate lines (e.g., "Name:", "Unit No:", "Admission Date:", etc.)
+- Put each section on its own line with proper spacing
+- Use line breaks between major sections
+- For Name, Unit No, Date of Birth, and Sex, put them on separate lines at the top
+- For lists (medications, diagnoses), put each item on a new line or separate with commas clearly
+- If information is missing, state "[Information not available]"
+- Use concise, professional medical language. Be brief and factual.
+- Do NOT use markdown formatting (no asterisks, no bold, no headers). Use plain text with line breaks for structure.
+
+EXAMPLE FORMAT:
+Name: [Name]
+Unit No: [Unit No]
+Date of Birth: [DOB]
+Sex: [Sex]
+
+Admission Date: [Date]
+Discharge Date: [Date]
+Attending: [Name]
+
+Chief Complaint: [Complaint]
+
+Procedure: [Procedure details]
+
+History Of Present Illness: [History]
+
+Past Medical History: [History]
+
+Physical Exam: [Exam details]
+
+[Continue with other sections, each on separate lines]"""
 
     user_prompt = f"""Generate a discharge summary for this patient:
 {patient_data}
@@ -654,12 +681,16 @@ Follow the section order EXACTLY as specified by the provided outline. Do not ad
 REQUIRED SECTION ORDER (USE EXACT TITLES):
 {outline_bullets}
 
-Rules:
-- Use concise, professional medical language.
-- Base content solely on the input patient data.
-- Preserve patient identifiers verbatim if present.
-- Be brief and factual.
-- IMPORTANT: Do NOT use markdown formatting (no asterisks, no bold, no headers). Return plain text only."""
+FORMATTING REQUIREMENTS:
+- Use clear section headings on separate lines (e.g., "Name:", "Unit No:", etc.)
+- Put each section on its own line with proper spacing
+- Use line breaks between major sections
+- For lists (medications, diagnoses), put each item on a new line or separate with commas clearly
+- Use concise, professional medical language
+- Base content solely on the input patient data
+- Preserve patient identifiers verbatim if present
+- Be brief and factual
+- Do NOT use markdown formatting (no asterisks, no bold, no headers). Use plain text with line breaks for structure."""
 
     user_prompt = f"""Generate a discharge summary STRICTLY following the section list above, based only on this data:\n\n{patient_data}\n\nReturn plain text with the exact section headings in order."""
 
