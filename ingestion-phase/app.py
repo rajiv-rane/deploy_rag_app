@@ -1892,22 +1892,57 @@ Extract Name, Unit No, Date of Birth, and Sex exactly as provided."""
             # Try FastAPI first if available, then fall back to local model
             summary_embedding = None
             
-            # Try FastAPI embedding endpoint first
-            if api_client and hasattr(api_client, 'embed_text'):
+            # Try FastAPI embedding endpoint first - check health and try even if not in session state
+            # This allows the feature to work even if FastAPI just became available
+            if api_client is None and 'api_client' in st.session_state:
+                api_client = st.session_state.api_client
+            
+            if api_client:
+                # Check if FastAPI is actually available (might have just started)
                 try:
+                    # Try to use the embedding endpoint directly
                     summary_embedding = api_client.embed_text(summary_text)
-                    st.info("💡 Using FastAPI embedding service")
+                    st.success("✅ Using FastAPI embedding service")
                 except Exception as e:
-                    st.warning(f"⚠️ FastAPI embedding failed: {str(e)}. Trying local model...")
+                    error_msg = str(e)
+                    # If it's a 503 (service unavailable) or connection error, FastAPI might still be loading
+                    if "503" in error_msg or "connection" in error_msg.lower() or "connect" in error_msg.lower():
+                        st.warning("⏳ FastAPI is still loading the embedding model. Please wait 1-2 minutes and try again.")
+                        st.info("💡 The model takes 2-3 minutes to load on first startup. Once ready, this feature will work automatically.")
+                    else:
+                        st.warning(f"⚠️ FastAPI embedding failed: {str(e)}. Trying local model...")
                     summary_embedding = None
             
             # Fall back to local model if FastAPI didn't work
             if summary_embedding is None:
                 if self.tokenizer is None or self.model is None:
-                    st.error("❌ Cannot add summary to knowledge base: Embedding model not available.")
-                    st.info("💡 Tip: The embedding model loads automatically when FastAPI backend is available. If you're in fallback mode, wait for FastAPI to finish loading (2-3 minutes), then try again.")
-                    return False
-                summary_embedding = self.embed_text(summary_text)
+                    # Check if FastAPI might be available but not checked yet
+                    if api_client:
+                        try:
+                            # One more attempt with a fresh health check
+                            if api_client.health_check():
+                                try:
+                                    summary_embedding = api_client.embed_text(summary_text)
+                                    st.success("✅ FastAPI is now ready! Using embedding service.")
+                                except Exception as e2:
+                                    st.error(f"❌ FastAPI health check passed but embedding failed: {str(e2)}")
+                                    st.info("💡 The embedding model might still be loading. Please wait 1-2 minutes and try again.")
+                                    return False
+                            else:
+                                st.error("❌ Cannot add summary to knowledge base: Embedding model not available.")
+                                st.info("💡 Tip: FastAPI backend is not ready yet. Wait for FastAPI to finish loading (2-3 minutes), then try again.")
+                                return False
+                        except Exception:
+                            st.error("❌ Cannot add summary to knowledge base: Embedding model not available.")
+                            st.info("💡 Tip: The embedding model loads automatically when FastAPI backend is available. If you're in fallback mode, wait for FastAPI to finish loading (2-3 minutes), then try again.")
+                            return False
+                    else:
+                        st.error("❌ Cannot add summary to knowledge base: Embedding model not available.")
+                        st.info("💡 Tip: The embedding model loads automatically when FastAPI backend is available. If you're in fallback mode, wait for FastAPI to finish loading (2-3 minutes), then try again.")
+                        return False
+                else:
+                    # Local model is available, use it
+                    summary_embedding = self.embed_text(summary_text)
             
             # 2. Prepare a unique ID
             # Using unit_no and timestamp allows for multiple summary versions
@@ -2618,10 +2653,21 @@ def main():
                 
                 if st.session_state.editable_summary and st.session_state.current_patient:
                     with st.spinner("Embedding summary and updating knowledgebase..."):
+                        # Always try to use FastAPI if available (check health now, not just session state)
+                        api_client_to_use = None
+                        if 'api_client' in st.session_state:
+                            # Check if FastAPI is actually available now (might have just started)
+                            if st.session_state.api_client.health_check():
+                                api_client_to_use = st.session_state.api_client
+                                st.session_state.use_fastapi = True  # Update session state
+                            else:
+                                # FastAPI not ready yet, but might become available
+                                api_client_to_use = st.session_state.api_client  # Try anyway, will handle error gracefully
+                        
                         st.session_state.rag_system.add_summary_to_vector_db(
                             st.session_state.current_patient,
                             st.session_state.editable_summary,
-                            api_client=st.session_state.api_client if st.session_state.get('use_fastapi') else None
+                            api_client=api_client_to_use
                         )
                 else:
                     st.warning("Please ensure a patient is loaded and a summary is present.")
