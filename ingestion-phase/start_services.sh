@@ -96,8 +96,9 @@ export STREAMLIT_SERVER_ENABLE_CORS=false
 export STREAMLIT_SERVER_ENABLE_XSRF_PROTECTION=false
 
 # Run Streamlit in foreground (Railway needs a foreground process)
+# Use python -m streamlit to avoid PATH issues
 # Don't exit on error - let Streamlit handle it
-exec streamlit run app.py \
+exec python -m streamlit run app.py \
     --server.port=$EXTERNAL_PORT \
     --server.address=0.0.0.0 \
     --server.headless=true \

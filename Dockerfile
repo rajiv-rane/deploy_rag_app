@@ -42,6 +42,12 @@ WORKDIR /app
 # Copy Python packages from builder
 COPY --from=builder /app/packages /usr/local/lib/python3.10/site-packages
 
+# Copy executables (streamlit, uvicorn, etc.) if they exist
+# When using --target, executables are in packages/bin
+RUN if [ -d /usr/local/lib/python3.10/site-packages/bin ]; then \
+        cp -r /usr/local/lib/python3.10/site-packages/bin/* /usr/local/bin/ 2>/dev/null || true; \
+    fi
+
 # Copy only necessary application files (excludes large files via .dockerignore)
 COPY ingestion-phase/api.py ingestion-phase/app.py ingestion-phase/config.py ./
 COPY ingestion-phase/run_app.py ingestion-phase/setup.py ./
